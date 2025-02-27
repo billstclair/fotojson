@@ -2839,16 +2839,17 @@ viewSourcePanel model idx panel =
                     ]
                     [ text panel.name ]
                 , br
+                , enabledButton (not isFirst) (MoveSourcePanelUp True) "^"
+                , text " "
                 , button (SaveRestoreSourcePanel True) "Install"
                 , text " "
                 , button (SaveRestoreSourcePanel False) "Set"
                 , br
+                , enabledButton (not isLast) (MoveSourcePanelUp False) "v"
+                , text " "
                 , button (AddSourcePanel False) "Add"
                 , text " "
                 , button DeleteSourcePanel "Delete"
-                , text " "
-                , enabledButton (not isFirst) (MoveSourcePanelUp True) "^"
-                , enabledButton (not isLast) (MoveSourcePanelUp False) "v"
                 ]
         , Html.td [ onClick <| SelectSourcePanel idx ] <|
             let
