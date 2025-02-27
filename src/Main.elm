@@ -365,14 +365,14 @@ encodeSavedModel savedModel =
         ]
 
 
-stonedEyeballsUrl : String
-stonedEyeballsUrl =
-    "stoned-eyeballs.jpg"
+fotoJsonUrl : String
+fotoJsonUrl =
+    "fotojson.jpg"
 
 
-stonedEyeballsSource : Source
-stonedEyeballsSource =
-    srcSource stonedEyeballsUrl
+fotoJsonSource : Source
+fotoJsonSource =
+    srcSource fotoJsonUrl
 
 
 srcSource : String -> Source
@@ -382,8 +382,8 @@ srcSource src =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { sources = [ stonedEyeballsSource ]
-      , lastSources = [ stonedEyeballsUrl ]
+    ( { sources = [ fotoJsonSource ]
+      , lastSources = [ fotoJsonUrl ]
       , srcIdx = 0
       , sourcePanels = []
       , switchPeriod = "5"
@@ -400,12 +400,12 @@ init =
       , lastSwapTime = 0
       , visibility = Visible
       , reallyDeleteState = False
-      , defaultSources = [ stonedEyeballsSource ]
+      , defaultSources = [ fotoJsonSource ]
       , sourcePanelIdx = -1
       , editingIdx = 0
       , editingIdxStr = "0"
-      , editingSrc = stonedEyeballsUrl
-      , editingLabel = getLabelFromFileName stonedEyeballsUrl
+      , editingSrc = fotoJsonUrl
+      , editingLabel = getLabelFromFileName fotoJsonUrl
       , editingUrl = ""
       , copyFrom = Live
       , copyTo = Clipboard
@@ -464,7 +464,7 @@ clearKeys prefix =
 
 localStoragePrefix : String
 localStoragePrefix =
-    "stonedeyeballs"
+    "fotojson"
 
 
 initialFunnelState : PortFunnels.State
@@ -482,7 +482,7 @@ localStorageSend message =
 type Msg
     = Noop
     | SequenceCmds (List (Cmd Msg))
-    | GotIndex String Bool (Result Http.Error (List String))
+    | GotIndex String Bool (Result Http.Error (List Source))
     | MouseDown
     | ReceiveTime Posix
     | SetVisible Visibility
@@ -1226,10 +1226,10 @@ updateInternal doUpdate msg modelIn =
                         { model | err = Just <| Debug.toString e }
                             |> withNoCmd
 
-                Ok indexStrings ->
+                Ok sources ->
                     let
                         indexSources =
-                            List.map srcSource indexStrings
+                            sources
 
                         mdl =
                             initializeEditingFields <|
@@ -1238,7 +1238,7 @@ updateInternal doUpdate msg modelIn =
 
                                 else
                                     model
-                                        |> maybeAddNewSources indexStrings
+                                        |> maybeAddNewSources indexSources
                     in
                     { mdl
                         | defaultSources = indexSources
@@ -1610,15 +1610,15 @@ newSourcePanelName panels =
     loop 1 "new"
 
 
-maybeAddNewSources : List String -> Model -> Model
-maybeAddNewSources indexStrings model =
+maybeAddNewSources : List Source -> Model -> Model
+maybeAddNewSources indexSources model =
     if not model.mergeEditingSources then
         model
 
     else
         let
             indexStringsSet =
-                AS.fromList <| List.map urlDisplay indexStrings
+                AS.fromList <| List.map urlDisplay <| List.map .src indexSources
 
             lastSources =
                 List.map urlDisplay model.lastSources
@@ -1798,12 +1798,12 @@ httpGet args =
         }
 
 
-httpGetJsonFile : String -> (Result Http.Error (List String) -> Msg) -> Cmd Msg
+httpGetJsonFile : String -> (Result Http.Error (List Source) -> Msg) -> Cmd Msg
 httpGetJsonFile url receiver =
     httpGet
         { url = url
         , expect =
-            Http.expectJson receiver (JD.list JD.string)
+            Http.expectJson receiver sourcesDecoder
         , headers =
             [ Http.header "Cache-control" "no-cache, no-store" ]
         }
@@ -2051,9 +2051,7 @@ peoplePrefix =
 
 nonPeopleFiles : List String
 nonPeopleFiles =
-    [ "stoned-eyeballs.jpg"
-    , "stoned-eyeballs-2.jpg"
-    ]
+    []
 
 
 imgTypes : List String
@@ -2247,7 +2245,7 @@ viewInternal model =
         , style "max-height" "60em"
         , style "overflow" "auto"
         ]
-        [ text "" --h2 "Stoned Eyeballs"
+        [ text "" --h2 "FotoJson"
         , viewSrc False modelSrc "" ""
         , br
         , text (String.fromInt index)
@@ -2293,16 +2291,11 @@ viewInternal model =
                 [ text model.switchPeriod ]
             , br
             , a
-                [ href "https://github.com/billstclair/stonedeyeballs"
+                [ href "https://github.com/billstclair/fotojson"
                 , target "_blank"
                 ]
                 [ text "GitHub" ]
             , text " "
-            , a
-                [ href "https://stoneder.club"
-                , target "_blank"
-                ]
-                [ text "Stoneder.club" ]
             , p []
                 [ text "Copyright "
                 , text special.copyright
