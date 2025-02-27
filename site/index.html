@@ -1,0 +1,97 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>FotoJson</title>
+    <meta name='wot-verification' content='5cb29ec02479d36e6dbc'/> 
+    <meta property="og:locale" content="en_US"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="FotoJson"/>
+    <meta property="og:description" content="FotoJson is a photo organizer."
+    <meta property="og:url" content="https://FotoJson.com/"/>
+    <meta property="og:site_name" content="FotoJson"/>
+    <meta property="og:image" content="https://FotoJson.com/images/icon-512.png"/>
+    <meta property="og:image:width" content="512"/>
+    <meta property="og:image:height" content="512"/>
+    <link rel='stylesheet' href='css/prettytable.css'>
+    <link href='/images/icon-180.png' rel='apple-touch-icon' sizes='180x180'>
+    <link rel="manifest" href="manifest.webmanifest">
+    <script type='text/javascript' src='js/PortFunnel.js'></script>
+    <script type='text/javascript' src='js/PortFunnel/LocalStorage.js'></script>
+    <script type='text/javascript' src='worker.js'></script>
+    <script type='text/javascript' src='elm.js'></script>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  </head>
+  <body style='margin: auto;'>
+    <noscript>
+      <h2 style='text-align: center;'>FotoJson</h2>
+      <p style='color: red; text-align: center;'>
+        <b>FotoJson.com requires JavaScript to function. Without JavaScript,
+          this page is all you will ever see.</b>
+      </p>
+      <p style='text-align: center;'>
+        <img src='images/icon-512.jpg' width='512' height='512' alt='FotoJson'/>
+      </p>
+      <p style='text-align: center;'>
+        <a href='https://github.com/billstclair/fotojson'>GitHub</a>
+      </p>
+    </noscript>
+    <div id='elm-node'></div>
+      <script type='text/javascript'>
+        var app = Elm.Main.init({
+            node: document.getElementById("elm-node")
+        });
+        PortFunnel.subscribe(app);
+
+        // Call the selectElement port with an element ID string
+        // to select its contents
+        var selectElement = app.ports.selectElement;
+        if (selectElement) {
+          selectElement.subscribe(function(id) {
+            var element = document.getElementById(id);
+            if (element) {
+              element.select();
+            };
+          });
+        }
+
+        // Clipboard support
+        // Three ports:
+        //   clipboardWrite <string>
+        //   clipboardRead <ignored arg>
+        //   clipboardContents (<string> sent here after clipboardRead())
+        if (navigator && navigator.clipboard) {
+            var clipboardWrite = navigator.clipboard.writeText &&
+                app.ports.clipboardWrite;
+            if (clipboardWrite) {
+                clipboardWrite.subscribe(function(text) {
+                    if (typeof(text) == 'string') {
+                        try {
+                            navigator.clipboard.writeText(text);
+                        } catch (error) {
+                            console.error("clipboard.writeText failed:", error);
+                        }
+                    }
+                });
+            }
+            var clipboardContents = app.ports.clipboardContents;
+            if (clipboardContents) {
+                var clipboardRead = navigator.clipboard.readText &&
+                    app.ports.clipboardRead;
+                if (clipboardRead) {
+                    clipboardRead.subscribe(function() {
+                        try {
+                            navigator.clipboard.readText().then(function(data) {
+                                clipboardContents.send(data);
+                            })
+                            .catch(function(err) {});
+                        } catch (error) {
+                            console.error("clipboard.readText failed:", error);
+                        }
+                    });
+                }
+            }                
+        }
+      </script>
+  </body>
+</html>
