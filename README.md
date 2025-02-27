@@ -2,10 +2,6 @@
 
 FotoJson is a photo organizer.
 
-This page started out as the single "Stoned Eyeballs" image. It has
-grown considerably, and is now primarily an example of how I build
-user interface code.
-
 ## How to set up
 
 You can use it for your own site, by changing `./site/.sshdir` to output an SSH heading for your site, copying `./site/images/index-sample.json` to `index.json`, and editing it to reflect the images you want to initially appear.
