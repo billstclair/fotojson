@@ -109,6 +109,7 @@ type alias Model =
     , lastSources : List String
     , srcIdx : Int
     , sourcePanels : List SourcePanel
+    , sourcePanelIdx : Int
     , switchPeriod : String
     , switchEnabled : Bool
     , showControls : Bool
@@ -124,7 +125,6 @@ type alias Model =
     , visibility : Visibility
     , reallyDeleteState : Bool
     , defaultSources : List Source -- written, but not yet read
-    , sourcePanelIdx : Int
     , editingIdx : Int
     , editingIdxStr : String
     , editingSrc : String
@@ -193,6 +193,7 @@ type alias SavedModel =
     , lastSources : List String
     , srcIdx : Int
     , sourcePanels : List SourcePanel
+    , sourcePanelIdx : Int
     , switchPeriod : String
     , switchEnabled : Bool
     , showControls : Bool
@@ -218,6 +219,7 @@ modelToSavedModel model =
     , lastSources = model.lastSources
     , srcIdx = model.srcIdx
     , sourcePanels = model.sourcePanels
+    , sourcePanelIdx = model.sourcePanelIdx
     , switchPeriod = model.switchPeriod
     , switchEnabled = model.switchEnabled
     , showControls = model.showControls
@@ -235,6 +237,7 @@ savedModelToModel savedModel model =
         , lastSources = savedModel.lastSources
         , srcIdx = savedModel.srcIdx
         , sourcePanels = savedModel.sourcePanels
+        , sourcePanelIdx = savedModel.sourcePanelIdx
         , switchPeriod = savedModel.switchPeriod
         , switchEnabled = savedModel.switchEnabled
         , showControls = savedModel.showControls
@@ -274,6 +277,7 @@ savedModelDecoder =
         |> optional "lastSources" lastSourcesDecoder []
         |> optional "srcIdx" JD.int 0
         |> optional "sourcePanels" (JD.list sourcePanelDecoder) []
+        |> optional "sourcePanelIdx" JD.int 0
         |> optional "switchPeriod" JD.string "5"
         |> optional "switchEnabled" JD.bool True
         |> optional "showControls" JD.bool False
@@ -355,6 +359,7 @@ encodeSavedModel savedModel =
         , ( "lastSources", JE.list JE.string savedModel.lastSources )
         , ( "srcIdx", JE.int savedModel.srcIdx )
         , ( "sourcePanels", JE.list encodeSourcePanel savedModel.sourcePanels )
+        , ( "sourcePanelIdx", JE.int savedModel.sourcePanelIdx )
         , ( "switchPeriod", JE.string savedModel.switchPeriod )
         , ( "switchEnabled", JE.bool savedModel.switchEnabled )
         , ( "showControls", JE.bool savedModel.showControls )
@@ -386,6 +391,7 @@ init =
       , lastSources = [ fotoJsonUrl ]
       , srcIdx = 0
       , sourcePanels = []
+      , sourcePanelIdx = -1
       , switchPeriod = "5"
       , switchEnabled = True
       , showControls = False
@@ -401,7 +407,6 @@ init =
       , visibility = Visible
       , reallyDeleteState = False
       , defaultSources = [ fotoJsonSource ]
-      , sourcePanelIdx = -1
       , editingIdx = 0
       , editingIdxStr = "0"
       , editingSrc = fotoJsonUrl
