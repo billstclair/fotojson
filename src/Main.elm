@@ -996,6 +996,9 @@ updateInternal doUpdate msg modelIn =
                     if model.editingLabel == "" then
                         getLabelFromFileName editingSrc
 
+                    else if model.editingLabel == getLabelFromFileName model.editingSrc then
+                        ""
+
                     else
                         model.editingLabel
             }
