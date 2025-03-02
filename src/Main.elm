@@ -1025,7 +1025,8 @@ updateInternal doUpdate msg modelIn =
                     { name = name, panels = model.sources }
 
                 ( newIdx, panels ) =
-                    insertInList idx panel model.sourcePanels
+                    Debug.log ("insertInList " ++ String.fromInt idx) <|
+                        insertInList idx panel model.sourcePanels
             in
             { model
                 | sourcePanels = panels
@@ -1546,7 +1547,8 @@ addSource maybeIdx source updateEditor model =
             model.sources
 
         idx =
-            Maybe.withDefault -1 maybeIdx
+            Maybe.withDefault -2 maybeIdx
+                + 1
 
         ( srcIdx, newSources ) =
             insertInList idx canonicalSource sources
