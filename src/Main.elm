@@ -1395,8 +1395,26 @@ finishCopyFromClipboard s model =
 
 copyUrlToPanel : String -> Model -> ( Model, Cmd Msg )
 copyUrlToPanel s model =
-    -- TODO
-    model |> withNoCmd
+    let
+        source =
+            srcSource s
+    in
+    case LE.getAt model.sourcePanelIdx model.sourcePanels of
+        Nothing ->
+            model |> withNoCmd
+
+        Just panel ->
+            let
+                panelCnt =
+                    List.length panel.panels
+            in
+            { model
+                | sourcePanels =
+                    LE.setAt model.sourcePanelIdx
+                        { panel | panels = LE.setAt panelCnt source panel.panels }
+                        model.sourcePanels
+            }
+                |> withNoCmd
 
 
 copyToPanel : String -> List Source -> Model -> ( Model, Cmd Msg )
