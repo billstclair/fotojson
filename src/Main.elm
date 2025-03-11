@@ -1355,6 +1355,17 @@ finishCopyFromClipboard s model =
                     addSource (Just <| model.srcIdx + 1) (srcSource s) True model
                         |> withNoCmd
 
+                Panel ->
+                    case model.copyFrom of
+                        Live ->
+                            copyLiveSelectionToPanel model
+
+                        Clipboard ->
+                            copyClipBoardUrlToPanel model
+
+                        _ ->
+                            model |> withNoCmd
+
                 _ ->
                     model |> withNoCmd
 
@@ -1378,8 +1389,23 @@ finishCopyFromClipboard s model =
                            )
                         |> withNoCmd
 
+                Displayed ->
+                    model |> withNoCmd
+
                 Panel ->
                     copyToPanel (copyOptionLabel Live) sources model
+
+
+copyLiveSelectionToPanel : Model -> ( Model, Cmd Msg )
+copyLiveSelectionToPanel model =
+    -- TODO
+    model |> withNoCmd
+
+
+copyClipBoardUrlToPanel : Model -> ( Model, Cmd Msg )
+copyClipBoardUrlToPanel model =
+    -- TODO
+    model |> withNoCmd
 
 
 copyToPanel : String -> List Source -> Model -> ( Model, Cmd Msg )
@@ -1464,6 +1490,10 @@ copyItems model =
                                     |> initializeEditingFields
                                     |> withNoCmd
 
+                            Displayed ->
+                                -- TODO
+                                model |> withNoCmd
+
                             Clipboard ->
                                 let
                                     json =
@@ -1478,9 +1508,17 @@ copyItems model =
                                 }
                                     |> withCmd (clipboardWrite <| JE.encode 0 json)
 
+            Displayed ->
+                -- TODO
+                model |> withNoCmd
+
             Live ->
                 case model.copyTo of
                     Live ->
+                        model |> withNoCmd
+
+                    Displayed ->
+                        -- TODO
                         model |> withNoCmd
 
                     Clipboard ->
@@ -2101,14 +2139,14 @@ msgs =
     , moveSource = "Moved image"
     , lookupSource = "Updated editor from Live"
     , deleteSource = "Deleted image"
-    , addSourcePanel = "Added Source Panel"
-    , saveSourcePanel = "Source Panel made live"
-    , restoreSourcePanel = "Overwrote Source Panel"
-    , deleteSourcePanel = "Deleted Source Panel"
-    , moveSourcePanel = "Moved Source Panel"
+    , addSourcePanel = "Added Film Roll"
+    , saveSourcePanel = "Film Roll made live"
+    , restoreSourcePanel = "Overwrote Film Roll"
+    , deleteSourcePanel = "Deleted Film Roll"
+    , moveSourcePanel = "Moved Film Roll"
     , copyClipboardToLive = "Copied Clipboard to Live"
-    , overwriteSourcePanel = "Overwrote Source Panel"
-    , copyPanel = "Copied Source Panel"
+    , overwriteSourcePanel = "Overwrote Film Roll"
+    , copyPanel = "Copied Film Roll"
     , copyLive = "Copied Live"
     , addNewSources = "Added new sources"
     }
@@ -2443,7 +2481,7 @@ viewControls model =
             , p []
                 [ button ToggleShowSearch <|
                     if model.showSearch then
-                        "Show Source Panels"
+                        "Show Film Rolls"
 
                     else
                         "Show Search"
@@ -2493,6 +2531,7 @@ viewSaveDeleteButtons model =
 type CopyOption
     = Clipboard
     | Live
+    | Displayed
     | Panel
 
 
@@ -2505,8 +2544,11 @@ copyOptionLabel copyOption =
         Live ->
             "Live"
 
+        Displayed ->
+            "Displayed"
+
         Panel ->
-            "Selected Panel"
+            "Selected Roll"
 
 
 labelCopyOption : String -> CopyOption
@@ -2518,7 +2560,10 @@ labelCopyOption string =
         "Live" ->
             Live
 
-        "Selected Panel" ->
+        "Displayed" ->
+            Displayed
+
+        "Selected Roll" ->
             Panel
 
         _ ->
@@ -2527,7 +2572,7 @@ labelCopyOption string =
 
 copyPlaces : List CopyOption
 copyPlaces =
-    [ Live, Clipboard, Panel ]
+    [ Live, Displayed, Clipboard, Panel ]
 
 
 viewCopyButtons : Model -> Html Msg
@@ -2580,6 +2625,9 @@ isFromSelectable option model =
             True
 
         Live ->
+            True
+
+        Displayed ->
             True
 
         Panel ->
@@ -2801,7 +2849,7 @@ viewSearch searchStart searchCnt searchString sources =
 viewSourcePanels : Model -> Html Msg
 viewSourcePanels model =
     span []
-        [ h3 "Source Panels"
+        [ h3 "Film Rolls"
         , p []
             [ p [] [ button (AddSourcePanel True) "Add" ]
             , p []
