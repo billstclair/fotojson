@@ -1358,10 +1358,7 @@ finishCopyFromClipboard s model =
                 Panel ->
                     case model.copyFrom of
                         Live ->
-                            copyLiveSelectionToPanel model
-
-                        Clipboard ->
-                            copyClipBoardUrlToPanel model
+                            copyUrlToPanel s model
 
                         _ ->
                             model |> withNoCmd
@@ -1396,14 +1393,8 @@ finishCopyFromClipboard s model =
                     copyToPanel (copyOptionLabel Live) sources model
 
 
-copyLiveSelectionToPanel : Model -> ( Model, Cmd Msg )
-copyLiveSelectionToPanel model =
-    -- TODO
-    model |> withNoCmd
-
-
-copyClipBoardUrlToPanel : Model -> ( Model, Cmd Msg )
-copyClipBoardUrlToPanel model =
+copyUrlToPanel : String -> Model -> ( Model, Cmd Msg )
+copyUrlToPanel s model =
     -- TODO
     model |> withNoCmd
 
@@ -1509,8 +1500,27 @@ copyItems model =
                                     |> withCmd (clipboardWrite <| JE.encode 0 json)
 
             Displayed ->
-                -- TODO
-                model |> withNoCmd
+                case LE.getAt model.sourcePanelIdx model.sourcePanels of
+                    Nothing ->
+                        model |> withNoCmd
+
+                    Just panel ->
+                        case LE.getAt model.srcIdx model.sources of
+                            Nothing ->
+                                model |> withNoCmd
+
+                            Just source ->
+                                { model
+                                    | sourcePanels =
+                                        LE.setAt model.sourcePanelIdx
+                                            { panel
+                                                | panels =
+                                                    panel.panels ++ [ source ]
+                                            }
+                                            model.sourcePanels
+                                    , sources = LE.remove source model.sources
+                                }
+                                    |> withNoCmd
 
             Live ->
                 case model.copyTo of
