@@ -7,7 +7,7 @@ Global persistence via Amazon database.
 -}
 
 import AssocSet as AS exposing (Set)
-import Browser
+import Browser exposing (Document, UrlRequest(..))
 import Browser.Dom as Dom
 import Browser.Events as Events exposing (Visibility(..))
 import Browser.Navigation as Navigation exposing (Key)
@@ -28,7 +28,7 @@ import Process
 import String.Extra as SE
 import Task exposing (Task, succeed)
 import Time exposing (Posix)
-import Url
+import Url exposing (Url)
 
 
 type alias Source =
@@ -105,7 +105,10 @@ type alias SourcePanel =
 
 
 type alias Model =
-    { sources : List Source
+    { title : String
+    , url : Url
+    , key : Key
+    , sources : List Source
     , lastSources : List String
     , srcIdx : Int
     , sourcePanels : List SourcePanel
@@ -385,9 +388,12 @@ srcSource src =
     { src = urlDisplay src, label = Nothing, url = Nothing }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { sources = [ fotoJsonSource ]
+init : Url -> Key -> ( Model, Cmd Msg )
+init url key =
+    ( { title = "FotoJSON"
+      , url = url
+      , key = key
+      , sources = [ fotoJsonSource ]
       , lastSources = [ fotoJsonUrl ]
       , srcIdx = 0
       , sourcePanels = []
@@ -486,6 +492,8 @@ localStorageSend message =
 
 type Msg
     = Noop
+    | OnUrlChange Url
+    | OnUrlRequest UrlRequest
     | SequenceCmds (List (Cmd Msg))
     | GotIndex String Bool (Result Http.Error (List Source))
     | MouseDown
@@ -651,6 +659,12 @@ updateInternal doUpdate msg modelIn =
                 { modelIn | reallyDeleteState = False }
     in
     case msg of
+        OnUrlChange url ->
+            ( model, Cmd.none )
+
+        OnUrlRequest urlRequest ->
+            ( model, Cmd.none )
+
         MouseDown ->
             ( nextImage model, Cmd.none )
 
@@ -1190,7 +1204,7 @@ updateInternal doUpdate msg modelIn =
             if model.reallyDeleteState then
                 let
                     ( mdl, cmd ) =
-                        init
+                        init model.url model.key
                 in
                 { mdl
                     | reallyDeleteState = False
@@ -2077,13 +2091,17 @@ center =
     Html.node "center"
 
 
-view : Model -> Html Msg
+view : Model -> Document Msg
 view model =
-    if model.started /= Started then
-        text ""
+    { title = model.title
+    , body =
+        [ if model.started /= Started then
+            text ""
 
-    else
-        viewInternal model
+          else
+            viewInternal model
+        ]
+    }
 
 
 modelLabel : Model -> String
@@ -3210,8 +3228,10 @@ br =
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = \flags -> init
+        , onUrlChange = OnUrlChange
+        , onUrlRequest = OnUrlRequest
         , view = view
         , update = update
         , subscriptions = subscriptions

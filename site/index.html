@@ -36,11 +36,8 @@
         <a href='https://github.com/billstclair/fotojson'>GitHub</a>
       </p>
     </noscript>
-    <div id='elm-node'></div>
-      <script type='text/javascript'>
-        var app = Elm.Main.init({
-            node: document.getElementById("elm-node")
-        });
+    <script type='text/javascript'>
+        var app = Elm.Main.init();
         PortFunnel.subscribe(app);
 
         // Call the selectElement port with an element ID string
@@ -92,6 +89,6 @@
                 }
             }                
         }
-      </script>
+    </script>
   </body>
 </html>
