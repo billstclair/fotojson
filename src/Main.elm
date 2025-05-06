@@ -209,7 +209,7 @@ type alias SavedModel =
 
 saveSavedModel : SavedModel -> Cmd Msg
 saveSavedModel savedModel =
-    put "model"
+    put pk.model
         (savedModel
             |> encodeSavedModel
             |> Just
@@ -391,7 +391,7 @@ srcSource src =
 init : Url -> Key -> ( Model, Cmd Msg )
 init url key =
     ( { title = "FotoJSON"
-      , url = url
+      , url = Debug.log "initial url" url
       , key = key
       , sources = [ fotoJsonSource ]
       , lastSources = [ fotoJsonUrl ]
@@ -1210,7 +1210,7 @@ updateInternal doUpdate msg modelIn =
                     | reallyDeleteState = False
                     , started = Started
                 }
-                    |> withCmds [ cmd, clearKeys "", getIndexJson True ]
+                    |> withCmds [ cmd, clearKeys "", getIndexJson model.url True ]
 
             else
                 { model | reallyDeleteState = True }
@@ -1909,16 +1909,16 @@ indexSampleJson =
     "images/index-sample.json"
 
 
-getIndexJson : Bool -> Cmd Msg
-getIndexJson setSourceList =
+getIndexJson : Url -> Bool -> Cmd Msg
+getIndexJson url setSourceList =
     let
         s =
             Debug.log "getIndexJson" setSourceList
 
-        url =
+        indexUrl =
             indexJson
     in
-    httpGetJsonFile url (GotIndex url setSourceList)
+    httpGetJsonFile indexUrl (GotIndex indexUrl setSourceList)
 
 
 handleGetModel : Maybe Value -> Model -> ( Model, Cmd Msg )
@@ -1936,7 +1936,7 @@ handleGetModel maybeValue model =
                 s =
                     Debug.log "null model value, getIndexJson" True
             in
-            model2 |> withCmd (getIndexJson True)
+            model2 |> withCmd (getIndexJson model2.url True)
 
         Just value ->
             case JD.decodeValue savedModelDecoder value of
@@ -1947,11 +1947,11 @@ handleGetModel maybeValue model =
                                 Debug.log "Error decoding SavedModel"
                                     (JD.errorToString err)
                     }
-                        |> withCmd (getIndexJson True)
+                        |> withCmd (getIndexJson model2.url True)
 
                 Ok savedModel ->
                     savedModelToModel savedModel model2
-                        |> withCmd (getIndexJson False)
+                        |> withCmd (getIndexJson model2.url False)
 
 
 centerFit : List (Attribute msg)
