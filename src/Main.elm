@@ -29,6 +29,8 @@ import String.Extra as SE
 import Task exposing (Task, succeed)
 import Time exposing (Posix)
 import Url exposing (Url)
+import Url.Parser as Parser exposing (Parser)
+import Url.Parser.Query as Query
 
 
 type alias Source =
@@ -496,6 +498,7 @@ type Msg
     | OnUrlRequest UrlRequest
     | SequenceCmds (List (Cmd Msg))
     | GotIndex String Bool (Result Http.Error (List Source))
+    | FinishUrlParse Url (Maybe String) (Maybe (List Source)) Bool
     | MouseDown
     | ReceiveTime Posix
     | SetVisible Visibility
@@ -664,6 +667,9 @@ updateInternal doUpdate msg modelIn =
 
         OnUrlRequest urlRequest ->
             ( model, Cmd.none )
+
+        FinishUrlParse url maybeTitle maybeSources setSourceList ->
+            finishUrlParse url maybeTitle maybeSources setSourceList model
 
         MouseDown ->
             ( nextImage model, Cmd.none )
@@ -1909,16 +1915,94 @@ indexSampleJson =
     "images/index-sample.json"
 
 
+maybeParseSourcesList : List String -> Maybe (List Source)
+maybeParseSourcesList strings =
+    let
+        folder : String -> Maybe (List Source) -> Maybe (List Source)
+        folder s maybeSources =
+            case maybeSources of
+                Nothing ->
+                    Nothing
+
+                Just sources ->
+                    case JD.decodeString sourcesDecoder s of
+                        Err _ ->
+                            Nothing
+
+                        Ok newSources ->
+                            sources ++ newSources |> Just
+    in
+    List.foldl folder (Just []) strings
+
+
+maybeParseSources : String -> Maybe (List Source)
+maybeParseSources string =
+    case JD.decodeString sourcesDecoder string of
+        Ok sources ->
+            Just sources
+
+        Err _ ->
+            Nothing
+
+
+msgCmd : Msg -> Cmd Msg
+msgCmd msg =
+    Task.perform identity (Task.succeed msg)
+
+
 getIndexJson : Url -> Bool -> Cmd Msg
 getIndexJson url setSourceList =
     let
-        s =
-            Debug.log "getIndexJson" setSourceList
+        titleParser : Query.Parser (Maybe String)
+        titleParser =
+            Query.string "title"
 
-        indexUrl =
-            indexJson
+        filmParser : Query.Parser (Maybe (List Source))
+        filmParser =
+            Query.custom "film" maybeParseSourcesList
+
+        ( titleParse, filmParse ) =
+            case url.query of
+                Nothing ->
+                    ( Nothing, Nothing )
+
+                Just query ->
+                    ( Parser.parse (Parser.query titleParser) url
+                        |> Maybe.withDefault Nothing
+                    , Parser.parse (Parser.query filmParser) url
+                        |> Maybe.withDefault Nothing
+                    )
     in
-    httpGetJsonFile indexUrl (GotIndex indexUrl setSourceList)
+    FinishUrlParse url titleParse filmParse setSourceList |> msgCmd
+
+
+finishUrlParse : Url -> Maybe String -> Maybe (List Source) -> Bool -> Model -> ( Model, Cmd Msg )
+finishUrlParse url maybeTitle maybeSources setSourceList model =
+    let
+        mdl =
+            case maybeTitle of
+                Nothing ->
+                    model
+
+                Just title ->
+                    { model | title = title }
+    in
+    case maybeSources of
+        Just sources ->
+            ( mdl
+            , GotIndex (Url.toString url) setSourceList (Ok sources)
+                |> msgCmd
+            )
+
+        Nothing ->
+            let
+                s =
+                    Debug.log "getIndexJson" setSourceList
+
+                indexUrl =
+                    indexJson
+            in
+            ( mdl, httpGetJsonFile indexUrl (GotIndex indexUrl setSourceList) )
 
 
 handleGetModel : Maybe Value -> Model -> ( Model, Cmd Msg )
