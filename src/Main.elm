@@ -1962,16 +1962,17 @@ getIndexJson url setSourceList =
             Query.custom "film" maybeParseSourcesList
 
         ( titleParse, filmParse ) =
-            case url.query of
-                Nothing ->
-                    ( Nothing, Nothing )
+            Debug.log "(titleParse, filmParse)" <|
+                case url.query of
+                    Nothing ->
+                        ( Nothing, Nothing )
 
-                Just query ->
-                    ( Parser.parse (Parser.query titleParser) url
-                        |> Maybe.withDefault Nothing
-                    , Parser.parse (Parser.query filmParser) url
-                        |> Maybe.withDefault Nothing
-                    )
+                    Just query ->
+                        ( Parser.parse (Parser.query titleParser) url
+                            |> Maybe.withDefault Nothing
+                        , Parser.parse (Parser.query filmParser) url
+                            |> Maybe.withDefault Nothing
+                        )
     in
     FinishUrlParse url titleParse filmParse setSourceList |> msgCmd
 
@@ -1980,7 +1981,7 @@ finishUrlParse : Url -> Maybe String -> Maybe (List Source) -> Bool -> Model -> 
 finishUrlParse url maybeTitle maybeSources setSourceList model =
     let
         mdl =
-            case maybeTitle of
+            case Debug.log "finishUrlParse, maybeTitle" maybeTitle of
                 Nothing ->
                     model
 
@@ -2423,7 +2424,7 @@ viewInternal model =
         , style "max-height" "60em"
         , style "overflow" "auto"
         ]
-        [ text "" --h2 "FotoJson"
+        [ h2 model.title
         , viewSrc False modelSrc "" ""
         , br
         , text (String.fromInt index)
