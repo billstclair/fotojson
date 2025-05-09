@@ -392,7 +392,7 @@ srcSource src =
 
 init : Url -> Key -> ( Model, Cmd Msg )
 init url key =
-    ( { title = "FotoJSON"
+    ( { title = "Foto JSON"
       , url = Debug.log "initial url" url
       , key = key
       , sources = [ fotoJsonSource ]
@@ -1981,7 +1981,7 @@ finishUrlParse : Url -> Maybe String -> Maybe (List Source) -> Bool -> Model -> 
 finishUrlParse url maybeTitle maybeSources setSourceList model =
     let
         mdl =
-            case Debug.log "finishUrlParse, maybeTitle" maybeTitle of
+            case maybeTitle of
                 Nothing ->
                     model
 
