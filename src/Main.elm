@@ -29,7 +29,7 @@ import String.Extra as SE
 import Task exposing (Task, succeed)
 import Time exposing (Posix)
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser)
+import Url.Parser as Parser exposing ((<?>), Parser)
 import Url.Parser.Query as Query
 
 
@@ -1961,16 +1961,20 @@ getIndexJson url setSourceList =
         filmParser =
             Query.custom "film" maybeParseSourcesList
 
+        emptyUrl =
+            Debug.log "getIndexJson, emptyUrl" <|
+                { url | path = "/" }
+
         ( titleParse, filmParse ) =
             Debug.log "(titleParse, filmParse)" <|
-                case url.query of
+                case emptyUrl.query of
                     Nothing ->
                         ( Nothing, Nothing )
 
                     Just query ->
-                        ( Parser.parse (Parser.query titleParser) url
+                        ( Parser.parse (Parser.top <?> titleParser) emptyUrl
                             |> Maybe.withDefault Nothing
-                        , Parser.parse (Parser.query filmParser) url
+                        , Parser.parse (Parser.top <?> filmParser) emptyUrl
                             |> Maybe.withDefault Nothing
                         )
     in
