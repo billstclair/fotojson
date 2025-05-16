@@ -393,7 +393,7 @@ srcSource src =
 init : Url -> Key -> ( Model, Cmd Msg )
 init url key =
     ( { title = "Foto JSON"
-      , url = Debug.log "initial url" url
+      , url = Debug.log "init, initial url" url
       , key = key
       , sources = [ fotoJsonSource ]
       , lastSources = [ fotoJsonUrl ]
@@ -1966,7 +1966,7 @@ getIndexJson url setSourceList =
                 { url | path = "/" }
 
         ( titleParse, filmParse ) =
-            Debug.log "(titleParse, filmParse)" <|
+            Debug.log "  (titleParse, filmParse)" <|
                 case emptyUrl.query of
                     Nothing ->
                         ( Nothing, Nothing )
@@ -1976,6 +1976,14 @@ getIndexJson url setSourceList =
                             |> Maybe.withDefault Nothing
                         , Parser.parse (Parser.top <?> filmParser) emptyUrl
                             |> Maybe.withDefault Nothing
+                            |> (\f ->
+                                    case f of
+                                        Just [] ->
+                                            Nothing
+
+                                        _ ->
+                                            f
+                               )
                         )
     in
     FinishUrlParse url titleParse filmParse setSourceList |> msgCmd
