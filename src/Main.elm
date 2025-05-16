@@ -4,6 +4,8 @@ port module Main exposing (main)
 
 Global persistence via Amazon database.
 
+Swipe left or right on photo to do what you think it will do.
+
 -}
 
 import AssocSet as AS exposing (Set)
