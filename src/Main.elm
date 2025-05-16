@@ -500,6 +500,7 @@ type Msg
     | OnUrlRequest UrlRequest
     | SequenceCmds (List (Cmd Msg))
     | GotIndex String Bool (Result Http.Error (List Source))
+    | SetDefaultSources (List Source)
     | FinishUrlParse Url (Maybe String) (Maybe (List Source)) Bool
     | MouseDown
     | ReceiveTime Posix
@@ -580,6 +581,9 @@ update msg model =
                     False
 
                 GotIndex _ _ _ ->
+                    False
+
+                SetDefaultSources _ ->
                     False
 
                 SetVisible _ ->
@@ -1277,7 +1281,16 @@ updateInternal doUpdate msg modelIn =
                             List.map .src mdl.sources
                                 |> uniqueifyList
                     }
-                        |> withNoCmd
+                        |> withCmd (SetDefaultSources indexSources |> msgCmd)
+
+        SetDefaultSources sources ->
+            { model
+                | sourcePanels =
+                    setSourcePanelNamed "default"
+                        (Debug.log "SetDefaultSources" sources)
+                        model.sourcePanels
+            }
+                |> withNoCmd
 
         Process value ->
             case
@@ -1292,6 +1305,29 @@ updateInternal doUpdate msg modelIn =
 
                 Ok res ->
                     res
+
+
+setSourcePanelNamed : String -> List Source -> List SourcePanel -> List SourcePanel
+setSourcePanelNamed name sources sourcePanels =
+    case LE.find (\sp -> sp.name == name) sourcePanels of
+        Nothing ->
+            { name = name
+            , panels = sources
+            }
+                :: sourcePanels
+
+        Just panel ->
+            if panel.panels == sources then
+                sourcePanels
+
+            else
+                case LE.elemIndex panel sourcePanels of
+                    Nothing ->
+                        -- Can't happen
+                        sourcePanels
+
+                    Just idx ->
+                        LE.setAt idx { panel | panels = sources } sourcePanels
 
 
 undo : Model -> Model
