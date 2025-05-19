@@ -1689,6 +1689,7 @@ addSource maybeIdx source updateEditor model =
             (canonicalSource.src :: model.lastSources)
                 |> uniqueifyList
         , srcIdx = srcIdx
+        , editingIdxStr = String.fromInt srcIdx
         , undoModel = Just <| modelToUndoModel model
         , err = Just msgs.addSource
     }
