@@ -2475,8 +2475,8 @@ viewInternal model =
         , style "max-height" "60em"
         , style "overflow" "auto"
         ]
-        [ h2 model.title
-        , viewSrc False modelSrc "" ""
+        [ -- h2 model.title
+          viewSrc False modelSrc "" ""
         , br
         , text (String.fromInt index)
         , text ": "
