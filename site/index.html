@@ -16,11 +16,12 @@
     <link href='/images/icon-180.png' rel='apple-touch-icon' sizes='180x180'>
     <link rel="manifest" href="manifest.webmanifest">
 
-    ;; Your app likely wants this, or something like it.
+    <!- Your app likely wants this, or something like it. ->
     <link rel='stylesheet' href='css/prettytable.css'>
 
-    ;; Your app should include this line, to get the JS code necessary
-    ;; for persistence in LocalStorage, and anything else required by FotoJson
+    <!- Your app should include this line, to get the JS code necessary
+     for persistence in LocalStorage, and anything else required by FotoJson
+     ->
     <script type='text/javascript' src='js/js.js'></script>
 
     <script type='text/javascript' src='worker.js'></script>
@@ -42,59 +43,6 @@
         <a href='https://github.com/billstclair/fotojson'>GitHub</a>
       </p>
     </noscript>
-    <script type='text/javascript'>
-        var app = Elm.Main.init();
-        PortFunnel.subscribe(app);
-
-        // Call the selectElement port with an element ID string
-        // to select its contents
-        var selectElement = app.ports.selectElement;
-        if (selectElement) {
-          selectElement.subscribe(function(id) {
-            var element = document.getElementById(id);
-            if (element) {
-              element.select();
-            };
-          });
-        }
-
-        // Clipboard support
-        // Three ports:
-        //   clipboardWrite <string>
-        //   clipboardRead <ignored arg>
-        //   clipboardContents (<string> sent here after clipboardRead())
-        if (navigator && navigator.clipboard) {
-            var clipboardWrite = navigator.clipboard.writeText &&
-                app.ports.clipboardWrite;
-            if (clipboardWrite) {
-                clipboardWrite.subscribe(function(text) {
-                    if (typeof(text) == 'string') {
-                        try {
-                            navigator.clipboard.writeText(text);
-                        } catch (error) {
-                            console.error("clipboard.writeText failed:", error);
-                        }
-                    }
-                });
-            }
-            var clipboardContents = app.ports.clipboardContents;
-            if (clipboardContents) {
-                var clipboardRead = navigator.clipboard.readText &&
-                    app.ports.clipboardRead;
-                if (clipboardRead) {
-                    clipboardRead.subscribe(function() {
-                        try {
-                            navigator.clipboard.readText().then(function(data) {
-                                clipboardContents.send(data);
-                            })
-                            .catch(function(err) {});
-                        } catch (error) {
-                            console.error("clipboard.readText failed:", error);
-                        }
-                    });
-                }
-            }                
-        }
-    </script>
+    <script type='text/javascript' src='js/run.js'></script>
   </body>
 </html>
