@@ -19,13 +19,16 @@
     <!- Your app likely wants this, or something like it. ->
     <link rel='stylesheet' href='css/prettytable.css'>
 
-    <!- Your app should include this line, to get the JS code necessary
-     for persistence in LocalStorage, and anything else required by FotoJson
+    <!- Your app should include these two lines, to get the JS code necessary
+     for persistence in LocalStorage, and anything else required by FotoJson.
+     I tried moving the elm.js load to js.js, but it didn't work.
      ->
     <script type='text/javascript' src='js/js.js'></script>
-
-    <script type='text/javascript' src='worker.js'></script>
     <script type='text/javascript' src='elm.js'></script>
+
+    <!-- Do-nothing worker needed to get some browsers to recognize a webapp. -->
+    <script type='text/javascript' src='worker.js'></script>
+
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   </head>
