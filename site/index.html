@@ -1,7 +1,7 @@
 <html>
   <head>
-    <meta charset="UTF-8">
     <title>FotoJson</title>
+    <meta charset="UTF-8">
     <meta name='wot-verification' content='5cb29ec02479d36e6dbc'/> 
     <meta property="og:locale" content="en_US"/>
     <meta property="og:type" content="website"/>
@@ -12,11 +12,17 @@
     <meta property="og:image" content="https://FotoJson.com/images/icon-512.png"/>
     <meta property="og:image:width" content="512"/>
     <meta property="og:image:height" content="512"/>
-    <link rel='stylesheet' href='css/prettytable.css'>
+
     <link href='/images/icon-180.png' rel='apple-touch-icon' sizes='180x180'>
     <link rel="manifest" href="manifest.webmanifest">
-    <script type='text/javascript' src='js/PortFunnel.js'></script>
-    <script type='text/javascript' src='js/PortFunnel/LocalStorage.js'></script>
+
+    ;; Your app likely wants this, or something like it.
+    <link rel='stylesheet' href='css/prettytable.css'>
+
+    ;; Your app should include this line, to get the JS code necessary
+    ;; for persistence in LocalStorage, and anything else required by FotoJson
+    <script type='text/javascript' src='js/js.js'></script>
+
     <script type='text/javascript' src='worker.js'></script>
     <script type='text/javascript' src='elm.js'></script>
     <meta name="mobile-web-app-capable" content="yes">
