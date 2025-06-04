@@ -36,6 +36,8 @@
 PortFunnel = {};
 scope.PortFunnel = PortFunnel;
 
+console.log("PortFunnel.js, scope: ", scope);
+
 PortFunnel.subscribe = subscribe; // called by HTML file
 PortFunnel.modules = {};          // modules[funnelName].cmd set by module JS.
 PortFunnel.sub = null;          // set below

@@ -17,6 +17,7 @@
        document.head.appendChild(script);
   }
 
-  loadScript('js/PortFunnel.js');
-  loadScript('js/PortFunnel/LocalStorage.js');
+  console.log("fotojson.com/js/js.js: Loading js, this: ", this);
+  loadScript('./js/PortFunnel.js');
+  loadScript('./js/PortFunnel/LocalStorage.js');
 })()
