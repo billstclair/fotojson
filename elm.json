@@ -11,6 +11,7 @@
             "billstclair/elm-dynamodb": "2.4.0",
             "billstclair/elm-localstorage": "7.3.1",
             "billstclair/elm-port-funnel": "1.2.0",
+            "driebit/elm-swipe-events": "1.0.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",

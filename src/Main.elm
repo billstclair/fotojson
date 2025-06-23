@@ -28,6 +28,7 @@ import PortFunnel.LocalStorage as LocalStorage
 import PortFunnels exposing (FunnelDict, Handler(..), State)
 import Process
 import String.Extra as SE
+import Swipe
 import Task exposing (Task, succeed)
 import Time exposing (Posix)
 import Url exposing (Url)
