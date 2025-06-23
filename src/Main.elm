@@ -128,6 +128,7 @@ type alias Model =
 
     -- Non-persistent below here
     , err : Maybe String
+    , gesture : Swipe.Gesture
     , time : Int
     , lastSwapTime : Int
     , visibility : Visibility
@@ -413,6 +414,7 @@ init url key =
 
       -- non-persistent below here
       , err = Nothing
+      , gesture = Swipe.blanco
       , time = 0
       , lastSwapTime = 0
       , visibility = Visible
@@ -499,6 +501,8 @@ type Msg
     = Noop
     | OnUrlChange Url
     | OnUrlRequest UrlRequest
+    | Swipe Swipe.Event
+    | EndSwipe Swipe.Event
     | SequenceCmds (List (Cmd Msg))
     | GotIndex String Bool (Result Http.Error (List Source))
     | SetDefaultSources (List Source)
@@ -658,6 +662,25 @@ keyIsCommand key =
     key == "Control" || key == "Meta"
 
 
+{-| Handle `Swipe event` in `updateInternal` below.
+-}
+doSwipe : Swipe.Event -> Model -> ( Model, Cmd Msg )
+doSwipe event model =
+    let
+        gesture =
+            model.gesture
+
+        pos : Swipe.Position
+        pos =
+            Debug.log "doSwipe" <|
+                Swipe.locate event
+    in
+    { model
+        | gesture = Swipe.record event gesture
+    }
+        |> withNoCmd
+
+
 updateInternal : Bool -> Msg -> Model -> ( Model, Cmd Msg )
 updateInternal doUpdate msg modelIn =
     let
@@ -674,6 +697,12 @@ updateInternal doUpdate msg modelIn =
 
         OnUrlRequest urlRequest ->
             ( model, Cmd.none )
+
+        Swipe event ->
+            doSwipe event model
+
+        EndSwipe gesture ->
+            { model | gesture = Swipe.blanco } |> withNoCmd
 
         FinishUrlParse url maybeTitle maybeSources setSourceList ->
             finishUrlParse url maybeTitle maybeSources setSourceList model
@@ -2377,6 +2406,14 @@ viewSrc forTable url maxHeight maxWidth =
 
               else if isImage && not forTable then
                 centerFit
+
+              else
+                []
+            , if isImage then
+                [ Swipe.onStart Swipe
+                , Swipe.onMove Swipe
+                , Swipe.onEnd EndSwipe
+                ]
 
               else
                 []
