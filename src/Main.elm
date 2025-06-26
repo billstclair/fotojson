@@ -4,7 +4,9 @@ port module Main exposing (main)
 
 Global persistence via Amazon database.
 
-Swipe left or right on photo to do what you think it will do.
+Swipe left or right on photo to do what you think it will do. (in progress)
+
+"Add link" button, pulls from clipboard and merges that address with current.
 
 -}
 
