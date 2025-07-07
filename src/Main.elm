@@ -666,21 +666,44 @@ keyIsCommand key =
 
 {-| Handle `Swipe event` in `updateInternal` below.
 -}
-doSwipe : Swipe.Event -> Model -> ( Model, Cmd Msg )
-doSwipe event model =
+endSwipe : Swipe.Event -> Model -> ( Model, Cmd Msg )
+endSwipe event model =
     let
         gesture =
-            model.gesture
+            Swipe.record event model.gesture
 
-        pos : Swipe.Position
-        pos =
-            Debug.log "doSwipe" <|
-                Swipe.locate event
+        ges : Swipe.Gesture
+        ges =
+            Debug.log "endSwipe, gesture:" <|
+                gesture
+
+        ev : Swipe.Event
+        ev =
+            Debug.log "  event: " event
+
+        mdl =
+            { model | gesture = Swipe.blanco }
+
+        sensitivity =
+            10
+
+        ( isTap, isLeftSwipe, isRightSwipe ) =
+            Debug.log "  (isTap, isLeftSwipe, isRightSwipe" <|
+                ( Swipe.isTap gesture
+                , Swipe.isLeftSwipe sensitivity gesture
+                , Swipe.isRightSwipe sensitivity gesture
+                )
     in
-    { model
-        | gesture = Swipe.record event gesture
-    }
-        |> withNoCmd
+    ( if isTap || isLeftSwipe then
+        nextImage mdl
+
+      else if isRightSwipe then
+        prevImage mdl
+
+      else
+        mdl
+    , Cmd.none
+    )
 
 
 updateInternal : Bool -> Msg -> Model -> ( Model, Cmd Msg )
@@ -701,10 +724,11 @@ updateInternal doUpdate msg modelIn =
             ( model, Cmd.none )
 
         Swipe event ->
-            doSwipe event model
+            { model | gesture = Swipe.record event model.gesture }
+                |> withNoCmd
 
-        EndSwipe gesture ->
-            { model | gesture = Swipe.blanco } |> withNoCmd
+        EndSwipe event ->
+            endSwipe event model
 
         FinishUrlParse url maybeTitle maybeSources setSourceList ->
             finishUrlParse url maybeTitle maybeSources setSourceList model
