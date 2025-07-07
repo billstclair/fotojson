@@ -4,8 +4,6 @@ port module Main exposing (main)
 
 Global persistence via Amazon database.
 
-Swipe left or right on photo to do what you think it will do. (in progress)
-
 "Add link" button, pulls from clipboard and merges that address with current.
 
 -}
@@ -672,15 +670,6 @@ endSwipe event model =
         gesture =
             Swipe.record event model.gesture
 
-        ges : Swipe.Gesture
-        ges =
-            Debug.log "endSwipe, gesture:" <|
-                gesture
-
-        ev : Swipe.Event
-        ev =
-            Debug.log "  event: " event
-
         mdl =
             { model | gesture = Swipe.blanco }
 
@@ -688,11 +677,10 @@ endSwipe event model =
             10
 
         ( isTap, isLeftSwipe, isRightSwipe ) =
-            Debug.log "  (isTap, isLeftSwipe, isRightSwipe" <|
-                ( Swipe.isTap gesture
-                , Swipe.isLeftSwipe sensitivity gesture
-                , Swipe.isRightSwipe sensitivity gesture
-                )
+            ( Swipe.isTap gesture
+            , Swipe.isLeftSwipe sensitivity gesture
+            , Swipe.isRightSwipe sensitivity gesture
+            )
     in
     ( if isTap || isLeftSwipe then
         nextImage mdl
@@ -2435,14 +2423,10 @@ viewSrc forTable url maxHeight maxWidth =
 
               else
                 []
-            , if isImage then
-                [ Swipe.onStart Swipe
-                , Swipe.onMove Swipe
-                , Swipe.onEnd EndSwipe
-                ]
-
-              else
-                []
+            , [ Swipe.onStart Swipe
+              , Swipe.onMove Swipe
+              , Swipe.onEnd EndSwipe
+              ]
             ]
         )
         []
