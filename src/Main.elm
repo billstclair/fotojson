@@ -214,9 +214,10 @@ type alias SavedModel =
     }
 
 
-saveSavedModel : SavedModel -> Cmd Msg
-saveSavedModel savedModel =
-    put pk.model
+saveSavedModel : LocalStorage.State -> SavedModel -> Cmd Msg
+saveSavedModel state savedModel =
+    put state
+        pk.model
         (savedModel
             |> encodeSavedModel
             |> Just
@@ -437,7 +438,7 @@ init url key =
       , isFocused = False
       , clipboard = ""
       , started = NotStarted
-      , funnelState = initialFunnelState
+      , funnelState = PortFunnels.initialState localStoragePrefix
       }
     , Cmd.none
     )
@@ -454,49 +455,52 @@ computeControlsJson sources =
 ---
 
 
-put : String -> Maybe Value -> Cmd Msg
-put key value =
-    localStorageSend (LocalStorage.put (Debug.log "put" key) value)
+put : LocalStorage.State -> String -> Maybe Value -> Cmd Msg
+put state key value =
+    let
+        prefix =
+            LocalStorage.getPrefix state
+    in
+    localStorageSend state
+        (LocalStorage.put (Debug.log ("put " ++ prefix) key) value)
 
 
-get : String -> Cmd Msg
-get key =
-    localStorageSend (LocalStorage.get <| Debug.log "get" key)
+get : LocalStorage.State -> String -> Cmd Msg
+get state key =
+    let
+        prefix =
+            LocalStorage.getPrefix state
+    in
+    localStorageSend state
+        (LocalStorage.get <| Debug.log ("get " ++ prefix) key)
 
 
-getLabeled : String -> String -> Cmd Msg
-getLabeled label key =
-    localStorageSend
-        (LocalStorage.getLabeled label <|
-            Debug.log ("getLabeled " ++ label) key
-        )
-
-
-listKeysLabeled : String -> String -> Cmd Msg
-listKeysLabeled label prefix =
-    localStorageSend (LocalStorage.listKeysLabeled label prefix)
-
-
-clearKeys : String -> Cmd Msg
-clearKeys prefix =
-    localStorageSend (LocalStorage.clear prefix)
+clearKeys : LocalStorage.State -> String -> Cmd Msg
+clearKeys state prefix =
+    localStorageSend state (LocalStorage.clear prefix)
 
 
 localStoragePrefix : String
 localStoragePrefix =
+    --overridden by settings
     "fotojson"
 
 
-initialFunnelState : PortFunnels.State
-initialFunnelState =
-    PortFunnels.initialState localStoragePrefix
+getLocalStoragePrefix : Maybe AppSettings -> String
+getLocalStoragePrefix maybeSettings =
+    case maybeSettings of
+        Nothing ->
+            localStoragePrefix
+
+        Just settings ->
+            settings.localStoragePrefix
 
 
-localStorageSend : LocalStorage.Message -> Cmd Msg
-localStorageSend message =
+localStorageSend : LocalStorage.State -> LocalStorage.Message -> Cmd Msg
+localStorageSend state message =
     LocalStorage.send (getCmdPort LocalStorage.moduleName ())
         message
-        initialFunnelState.storage
+        state
 
 
 type Msg
@@ -657,7 +661,7 @@ update msg model =
             in
             mdl
                 |> withCmds
-                    [ cmd, saveSavedModel savedMdl ]
+                    [ cmd, saveSavedModel mdl.funnelState.storage savedMdl ]
 
     else
         mdl |> withCmd cmd
@@ -1272,7 +1276,11 @@ updateInternal doUpdate msg modelIn =
                     | reallyDeleteState = False
                     , started = Started
                 }
-                    |> withCmds [ cmd, clearKeys "", getIndexJson model.url True ]
+                    |> withCmds
+                        [ cmd
+                        , clearKeys mdl.funnelState.storage ""
+                        , getIndexJson model.url True
+                        ]
 
             else
                 { model | reallyDeleteState = True }
@@ -1357,7 +1365,12 @@ updateInternal doUpdate msg modelIn =
                     res
 
         ReceiveSettings settings ->
-            { model | settings = Debug.log "settings" settings }
+            { model
+                | settings =
+                    Debug.log "settings" settings
+                , funnelState =
+                    PortFunnels.initialState <| getLocalStoragePrefix settings
+            }
                 |> withNoCmd
 
 
@@ -1922,9 +1935,7 @@ storageHandler response state model =
                 (mdl.started == StartedReadingModel)
                     && (model.started == NotStarted)
             then
-                Cmd.batch
-                    [ get pk.model
-                    ]
+                get mdl.funnelState.storage pk.model
 
             else
                 Cmd.none
@@ -1933,21 +1944,8 @@ storageHandler response state model =
         LocalStorage.GetResponse { label, key, value } ->
             handleGetResponse label key value mdl
 
-        LocalStorage.ListKeysResponse { label, prefix, keys } ->
-            handleListKeysResponse label prefix keys mdl
-
         _ ->
             mdl |> withCmd cmd
-
-
-handleListKeysResponse : Maybe String -> String -> List String -> Model -> ( Model, Cmd Msg )
-handleListKeysResponse maybeLabel prefix keys model =
-    case maybeLabel of
-        Nothing ->
-            model |> withNoCmd
-
-        Just label ->
-            model |> withCmds (List.map (getLabeled label) keys)
 
 
 handleGetResponse : Maybe String -> String -> Maybe Value -> Model -> ( Model, Cmd Msg )
