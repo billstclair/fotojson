@@ -127,6 +127,7 @@ type alias Model =
     , showSearch : Bool
 
     -- Non-persistent below here
+    , settings : Maybe AppSettings
     , err : Maybe String
     , gesture : Swipe.Gesture
     , time : Int
@@ -396,7 +397,7 @@ srcSource src =
 
 init : Url -> Key -> ( Model, Cmd Msg )
 init url key =
-    ( { title = "Foto JSON"
+    ( { title = "Foto JSON app" --overridden by `settings`
       , url = Debug.log "init, initial url" url
       , key = key
       , sources = [ fotoJsonSource ]
@@ -413,6 +414,7 @@ init url key =
       , showSearch = False
 
       -- non-persistent below here
+      , settings = Nothing
       , err = Nothing
       , gesture = Swipe.blanco
       , time = 0
@@ -550,6 +552,7 @@ type Msg
     | ReloadFromServer
     | DeleteState
     | Process Value
+    | ReceiveSettings (Maybe AppSettings)
 
 
 swapInterval : Model -> Int
@@ -583,6 +586,9 @@ update msg model =
                     False
 
                 Process _ ->
+                    False
+
+                ReceiveSettings _ ->
                     False
 
                 GotIndex _ _ _ ->
@@ -1349,6 +1355,10 @@ updateInternal doUpdate msg modelIn =
 
                 Ok res ->
                     res
+
+        ReceiveSettings settings ->
+            { model | settings = Debug.log "settings" settings }
+                |> withNoCmd
 
 
 setSourcePanelNamed : String -> List Source -> List SourcePanel -> List SourcePanel
@@ -3430,6 +3440,7 @@ subscriptions model =
         , Time.every 100.0 ReceiveTime
         , PortFunnels.subscriptions Process model
         , Events.onKeyDown <| keyDecoder True
+        , getSettings ReceiveSettings
         , clipboardContents ClipboardContents
 
         --, Events.onMouseDown mouseDownDecoder
@@ -3445,6 +3456,29 @@ keyDecoder keyDown =
 mouseDownDecoder : Decoder Msg
 mouseDownDecoder =
     JD.succeed MouseDown
+
+
+{-| from `fotoJsonSettings` var in site/index.html
+-}
+type alias AppSettings =
+    { title : String
+    , showTitle : Bool
+    , localStoragePrefix : String
+    , githubUrl : Maybe String
+    , copyright : Maybe CopyrightInfo
+    }
+
+
+type alias CopyrightInfo =
+    { date : String
+    , url : String
+    , text : String
+    }
+
+
+{-| This is called to deliver the app settings from site/index.html
+-}
+port getSettings : (Maybe AppSettings -> msg) -> Sub msg
 
 
 {-| Call this to select the contents of a text input element
