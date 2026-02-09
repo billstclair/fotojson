@@ -1308,6 +1308,13 @@ updateInternal doUpdate msg modelIn =
                             ]
 
         GotIndex filename setSourcesList result ->
+            let
+                x =
+                    ( Debug.log "GotIndex, filename" filename
+                    , Debug.log "  setSourcesList" setSourcesList
+                    , Debug.log "  result" result
+                    )
+            in
             case result of
                 Err e ->
                     if filename == indexJson then
