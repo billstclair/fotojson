@@ -1373,7 +1373,7 @@ updateInternal doUpdate msg modelIn =
         ReceiveSettings settings ->
             { model
                 | settings =
-                    Debug.log "settings" settings
+                    Debug.log "receive settings" settings
                 , funnelState =
                     PortFunnels.initialState <| getLocalStoragePrefix settings
             }
@@ -2090,14 +2090,14 @@ finishUrlParse : Url -> Maybe String -> Maybe (List Source) -> Bool -> Model -> 
 finishUrlParse url maybeTitle maybeSources setSourceList model =
     let
         mdl =
-            case maybeTitle of
+            case Debug.log "maybeTitle" maybeTitle of
                 Nothing ->
                     model
 
                 Just title ->
                     { model | title = title }
     in
-    case maybeSources of
+    case Debug.log "maybeSources" maybeSources of
         Just sources ->
             ( mdl
             , GotIndex (Url.toString url) setSourceList (Ok sources)
