@@ -2144,7 +2144,7 @@ handleGetModel maybeValue model =
                         |> withCmd (getIndexJson model2.url True)
 
                 Ok savedModel ->
-                    savedModelToModel savedModel model2
+                    savedModelToModel (Debug.log "savedModel" savedModel) model2
                         |> withCmd (getIndexJson model2.url False)
 
 
