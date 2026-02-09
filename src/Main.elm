@@ -133,6 +133,7 @@ type alias Model =
     , showSearch : Bool
 
     -- Non-persistent below here
+    , settings : Maybe AppSettings
     , err : Maybe String
     , gesture : Swipe.Gesture
     , time : Int
@@ -219,9 +220,10 @@ type alias SavedModel =
     }
 
 
-saveSavedModel : SavedModel -> Cmd Msg
-saveSavedModel savedModel =
-    put pk.model
+saveSavedModel : LocalStorage.State -> SavedModel -> Cmd Msg
+saveSavedModel state savedModel =
+    put state
+        pk.model
         (savedModel
             |> encodeSavedModel
             |> Just
@@ -402,7 +404,7 @@ srcSource src =
 
 init : Url -> Key -> ( Model, Cmd Msg )
 init url key =
-    ( { title = "Foto JSON"
+    ( { title = "Foto JSON app" --overridden by `settings`
       , url = Debug.log "init, initial url" url
       , key = key
       , sources = [ fotoJsonSource ]
@@ -419,6 +421,7 @@ init url key =
       , showSearch = False
 
       -- non-persistent below here
+      , settings = Nothing
       , err = Nothing
       , gesture = Swipe.blanco
       , time = 0
@@ -441,7 +444,7 @@ init url key =
       , isFocused = False
       , clipboard = ""
       , started = NotStarted
-      , funnelState = initialFunnelState
+      , funnelState = PortFunnels.initialState localStoragePrefix
       }
     , Cmd.none
     )
@@ -458,49 +461,52 @@ computeControlsJson sources =
 ---
 
 
-put : String -> Maybe Value -> Cmd Msg
-put key value =
-    localStorageSend (LocalStorage.put (Debug.log "put" key) value)
+put : LocalStorage.State -> String -> Maybe Value -> Cmd Msg
+put state key value =
+    let
+        prefix =
+            LocalStorage.getPrefix state
+    in
+    localStorageSend state
+        (LocalStorage.put (Debug.log ("put " ++ prefix) key) value)
 
 
-get : String -> Cmd Msg
-get key =
-    localStorageSend (LocalStorage.get <| Debug.log "get" key)
+get : LocalStorage.State -> String -> Cmd Msg
+get state key =
+    let
+        prefix =
+            LocalStorage.getPrefix state
+    in
+    localStorageSend state
+        (LocalStorage.get <| Debug.log ("get " ++ prefix) key)
 
 
-getLabeled : String -> String -> Cmd Msg
-getLabeled label key =
-    localStorageSend
-        (LocalStorage.getLabeled label <|
-            Debug.log ("getLabeled " ++ label) key
-        )
-
-
-listKeysLabeled : String -> String -> Cmd Msg
-listKeysLabeled label prefix =
-    localStorageSend (LocalStorage.listKeysLabeled label prefix)
-
-
-clearKeys : String -> Cmd Msg
-clearKeys prefix =
-    localStorageSend (LocalStorage.clear prefix)
+clearKeys : LocalStorage.State -> String -> Cmd Msg
+clearKeys state prefix =
+    localStorageSend state (LocalStorage.clear prefix)
 
 
 localStoragePrefix : String
 localStoragePrefix =
+    --overridden by settings
     "fotojson"
 
 
-initialFunnelState : PortFunnels.State
-initialFunnelState =
-    PortFunnels.initialState localStoragePrefix
+getLocalStoragePrefix : Maybe AppSettings -> String
+getLocalStoragePrefix maybeSettings =
+    case maybeSettings of
+        Nothing ->
+            localStoragePrefix
+
+        Just settings ->
+            settings.localStoragePrefix
 
 
-localStorageSend : LocalStorage.Message -> Cmd Msg
-localStorageSend message =
+localStorageSend : LocalStorage.State -> LocalStorage.Message -> Cmd Msg
+localStorageSend state message =
     LocalStorage.send (getCmdPort LocalStorage.moduleName ())
         message
-        initialFunnelState.storage
+        state
 
 
 type Msg
@@ -556,6 +562,7 @@ type Msg
     | ReloadFromServer
     | DeleteState
     | Process Value
+    | ReceiveSettings (Maybe AppSettings)
 
 
 swapInterval : Model -> Int
@@ -589,6 +596,9 @@ update msg model =
                     False
 
                 Process _ ->
+                    False
+
+                ReceiveSettings _ ->
                     False
 
                 GotIndex _ _ _ ->
@@ -657,7 +667,7 @@ update msg model =
             in
             mdl
                 |> withCmds
-                    [ cmd, saveSavedModel savedMdl ]
+                    [ cmd, saveSavedModel mdl.funnelState.storage savedMdl ]
 
     else
         mdl |> withCmd cmd
@@ -670,21 +680,34 @@ keyIsCommand key =
 
 {-| Handle `Swipe event` in `updateInternal` below.
 -}
-doSwipe : Swipe.Event -> Model -> ( Model, Cmd Msg )
-doSwipe event model =
+endSwipe : Swipe.Event -> Model -> ( Model, Cmd Msg )
+endSwipe event model =
     let
         gesture =
-            model.gesture
+            Swipe.record event model.gesture
 
-        pos : Swipe.Position
-        pos =
-            Debug.log "doSwipe" <|
-                Swipe.locate event
+        mdl =
+            { model | gesture = Swipe.blanco }
+
+        sensitivity =
+            10
+
+        ( isTap, isLeftSwipe, isRightSwipe ) =
+            ( Swipe.isTap gesture
+            , Swipe.isLeftSwipe sensitivity gesture
+            , Swipe.isRightSwipe sensitivity gesture
+            )
     in
-    { model
-        | gesture = Swipe.record event gesture
-    }
-        |> withNoCmd
+    ( if isTap || isLeftSwipe then
+        nextImage mdl
+
+      else if isRightSwipe then
+        prevImage mdl
+
+      else
+        mdl
+    , Cmd.none
+    )
 
 
 updateInternal : Bool -> Msg -> Model -> ( Model, Cmd Msg )
@@ -705,10 +728,11 @@ updateInternal doUpdate msg modelIn =
             ( model, Cmd.none )
 
         Swipe event ->
-            doSwipe event model
+            { model | gesture = Swipe.record event model.gesture }
+                |> withNoCmd
 
-        EndSwipe gesture ->
-            { model | gesture = Swipe.blanco } |> withNoCmd
+        EndSwipe event ->
+            endSwipe event model
 
         FinishUrlParse url maybeTitle maybeSources setSourceList ->
             finishUrlParse url maybeTitle maybeSources setSourceList model
@@ -1258,7 +1282,11 @@ updateInternal doUpdate msg modelIn =
                     | reallyDeleteState = False
                     , started = Started
                 }
-                    |> withCmds [ cmd, clearKeys "", getIndexJson model.url True ]
+                    |> withCmds
+                        [ cmd
+                        , clearKeys mdl.funnelState.storage ""
+                        , getIndexJson model.url True
+                        ]
 
             else
                 { model | reallyDeleteState = True }
@@ -1341,6 +1369,15 @@ updateInternal doUpdate msg modelIn =
 
                 Ok res ->
                     res
+
+        ReceiveSettings settings ->
+            { model
+                | settings =
+                    Debug.log "settings" settings
+                , funnelState =
+                    PortFunnels.initialState <| getLocalStoragePrefix settings
+            }
+                |> withNoCmd
 
 
 setSourcePanelNamed : String -> List Source -> List SourcePanel -> List SourcePanel
@@ -1904,9 +1941,7 @@ storageHandler response state model =
                 (mdl.started == StartedReadingModel)
                     && (model.started == NotStarted)
             then
-                Cmd.batch
-                    [ get pk.model
-                    ]
+                get mdl.funnelState.storage pk.model
 
             else
                 Cmd.none
@@ -1915,21 +1950,8 @@ storageHandler response state model =
         LocalStorage.GetResponse { label, key, value } ->
             handleGetResponse label key value mdl
 
-        LocalStorage.ListKeysResponse { label, prefix, keys } ->
-            handleListKeysResponse label prefix keys mdl
-
         _ ->
             mdl |> withCmd cmd
-
-
-handleListKeysResponse : Maybe String -> String -> List String -> Model -> ( Model, Cmd Msg )
-handleListKeysResponse maybeLabel prefix keys model =
-    case maybeLabel of
-        Nothing ->
-            model |> withNoCmd
-
-        Just label ->
-            model |> withCmds (List.map (getLabeled label) keys)
 
 
 handleGetResponse : Maybe String -> String -> Maybe Value -> Model -> ( Model, Cmd Msg )
@@ -2415,14 +2437,10 @@ viewSrc forTable url maxHeight maxWidth =
 
               else
                 []
-            , if isImage then
-                [ Swipe.onStart Swipe
-                , Swipe.onMove Swipe
-                , Swipe.onEnd EndSwipe
-                ]
-
-              else
-                []
+            , [ Swipe.onStart Swipe
+              , Swipe.onMove Swipe
+              , Swipe.onEnd EndSwipe
+              ]
             ]
         )
         []
@@ -3426,6 +3444,7 @@ subscriptions model =
         , Time.every 100.0 ReceiveTime
         , PortFunnels.subscriptions Process model
         , Events.onKeyDown <| keyDecoder True
+        , getSettings ReceiveSettings
         , clipboardContents ClipboardContents
 
         --, Events.onMouseDown mouseDownDecoder
@@ -3441,6 +3460,29 @@ keyDecoder keyDown =
 mouseDownDecoder : Decoder Msg
 mouseDownDecoder =
     JD.succeed MouseDown
+
+
+{-| from `fotoJsonSettings` var in site/index.html
+-}
+type alias AppSettings =
+    { title : String
+    , showTitle : Bool
+    , localStoragePrefix : String
+    , githubUrl : Maybe String
+    , copyright : Maybe CopyrightInfo
+    }
+
+
+type alias CopyrightInfo =
+    { date : String
+    , url : String
+    , text : String
+    }
+
+
+{-| This is called to deliver the app settings from site/index.html
+-}
+port getSettings : (Maybe AppSettings -> msg) -> Sub msg
 
 
 {-| Call this to select the contents of a text input element

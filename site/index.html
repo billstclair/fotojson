@@ -19,11 +19,12 @@
     <!- Your app likely wants this, or something like it. ->
     <link rel='stylesheet' href='css/prettytable.css'>
 
-    <!- Your app should include these two lines, to get the JS code necessary
-     for persistence in LocalStorage, and anything else required by FotoJson.
-     I tried moving the elm.js load to js.js, but it didn't work.
+    <!- Your app should include these three lines, to get the JS code necessary
+     for persistence in LocalStorage, and the Elm code.
      ->
-    <script type='text/javascript' src='js/js.js'></script>
+
+    <script type='text/javascript' src='js/PortFunnel.js'></script>
+    <script type='text/javascript' src='js/PortFunnel/LocalStorage.js'></script>
     <script type='text/javascript' src='elm.js'></script>
 
     <!-- Do-nothing worker needed to get some browsers to recognize a webapp. -->
@@ -46,6 +47,21 @@
         <a href='https://github.com/billstclair/fotojson'>GitHub</a>
       </p>
     </noscript>
+    <!-- This specifies app-specific properties, used by the Elm code.
+         Change it for your app.
+      -->
+    <script type='text/javascript'>
+      var fotojsonSettings =
+          { title: "Foto JSON", // Page title in browser tab
+            showTitle : false,  // Set to true to display title at top of page.
+            localStoragePrefix: "fotojson",  // unique to your app
+            githubUrl: "https: github.com/billstclair/fotojson", // null to not show
+            copyright: { date: "2024-2025",
+                         url: "https://billstclair.com/",
+                         text: "Bill St. Clair"
+                        }
+          }
+      </script>
     <script type='text/javascript' src='js/run.js'></script>
   </body>
 </html>

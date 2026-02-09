@@ -14,6 +14,15 @@
   var app = Elm.Main.init();
   PortFunnel.subscribe(app);
 
+  // Send the app settings to Elm.
+  var getSettings = app.ports.getSettings;
+  if (getSettings) {
+    settings = fotojsonSettings; // set in index.html
+    if (settings) {
+      getSettings.send(settings);
+    }
+  }
+
   // Call the selectElement port with an element ID string
   // to select its contents
   var selectElement = app.ports.selectElement;
