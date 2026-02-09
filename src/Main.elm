@@ -1998,7 +1998,10 @@ httpGetJsonFile url receiver =
         , expect =
             Http.expectJson receiver sourcesDecoder
         , headers =
-            [ Http.header "Cache-control" "no-cache, no-store" ]
+            [ Http.header "Cache-control" "no-cache, no-store, must-revalidate"
+            , Http.header "Pragma" "no-cache"
+            , Http.header "Expires" "0"
+            ]
         }
 
 
@@ -2107,7 +2110,7 @@ finishUrlParse url maybeTitle maybeSources setSourceList model =
         Nothing ->
             let
                 s =
-                    Debug.log "getIndexJson" setSourceList
+                    Debug.log "getIndexJson: (indexUrl, setSourceList)" ( indexUrl, setSourceList )
 
                 indexUrl =
                     indexJson
