@@ -20,3 +20,8 @@ http://localhost:8000/site/index.html. Each time you build, you can
 full-reload the browser tab.
 
 To upload the code to FotoJson.com (if you're me), `bin/update-site`.
+
+See
+[here](https://github.com/billstclair/stonedeyeballs/blob/main/site/index.html)
+for instructions on using the FotoJSON code initialized with different
+photos.

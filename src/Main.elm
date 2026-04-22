@@ -2547,8 +2547,17 @@ viewInternal model =
         , style "max-height" "60em"
         , style "overflow" "auto"
         ]
-        [ -- h2 model.title
-          viewSrc False modelSrc "" ""
+        [ case model.settings of
+            Nothing ->
+                text ""
+
+            Just settings ->
+                if settings.showTitle then
+                    h2 settings.title
+
+                else
+                    text ""
+        , viewSrc False modelSrc "" ""
         , br
         , text (String.fromInt index)
         , text ": "
@@ -2592,22 +2601,58 @@ viewInternal model =
                 ]
                 [ text model.switchPeriod ]
             , br
-            , a
-                [ href "https://github.com/billstclair/fotojson"
-                , target "_blank"
-                ]
-                [ text "GitHub" ]
-            , text " "
-            , p []
-                [ text "Copyright "
-                , text special.copyright
-                , text "2024-2025, "
-                , a
-                    [ href "https://billstclair.com/"
-                    , target "_blank"
-                    ]
-                    [ text "Bill St. Clair" ]
-                ]
+            , text special.copyright
+            , case model.settings of
+                Nothing ->
+                    span []
+                        [ text "2024-2025, "
+                        , a
+                            [ href "https://billstclair.com/"
+                            , target "_blank"
+                            ]
+                            [ text "Bill St. Clair" ]
+                        ]
+
+                Just info ->
+                    case info.copyright of
+                        Nothing ->
+                            text ""
+
+                        Just copyrightInfo ->
+                            span []
+                                [ text copyrightInfo.date
+                                , text ", "
+                                , a
+                                    [ href copyrightInfo.url
+                                    , target "_blank"
+                                    ]
+                                    [ text copyrightInfo.text ]
+                                ]
+            , case model.settings of
+                Nothing ->
+                    span []
+                        [ br
+                        , a
+                            [ href "https://github.com/billstclair/fotojson"
+                            , target "_blank"
+                            ]
+                            [ text "GitHub" ]
+                        ]
+
+                Just settings ->
+                    case settings.githubUrl of
+                        Nothing ->
+                            text ""
+
+                        Just githubUrl ->
+                            span []
+                                [ br
+                                , a
+                                    [ href githubUrl
+                                    , target "_blank"
+                                    ]
+                                    [ text "GitHub" ]
+                                ]
             , p []
                 [ button ReloadFromServer "Reload code from server" ]
             , p []
